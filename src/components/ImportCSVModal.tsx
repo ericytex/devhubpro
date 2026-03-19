@@ -71,25 +71,16 @@ export default function ImportCSVModal() {
 
             <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-5">
               
-              <label className="relative group cursor-pointer block">
+              <div className="flex flex-col gap-2">
                 <input
                   type="file"
                   name="file"
                   accept=".csv"
                   required
                   onChange={(e) => setFileName(e.target.files?.[0]?.name || '')}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  className="w-full text-sm text-on-surface-variant file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:cursor-pointer file:transition-colors bg-surface-container-low border border-outline-variant/40 rounded-xl cursor-pointer py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
-                <div className={`w-full flex flex-col items-center justify-center px-4 py-8 border-2 rounded-xl transition-all ${fileName ? 'bg-primary/5 border-primary/40 border-solid' : 'bg-surface-container-low border-outline-variant/40 border-dashed group-hover:bg-primary/5 group-hover:border-primary/30'}`}>
-                  <span className={`material-symbols-outlined text-4xl mb-2 transition-colors ${fileName ? 'text-primary' : 'text-outline group-hover:text-primary'}`}>
-                    {fileName ? 'description' : 'cloud_upload'}
-                  </span>
-                  <p className="text-sm font-semibold text-on-surface text-center px-2 truncate w-full">
-                    {fileName || 'Click or drag CSV here'}
-                  </p>
-                  {!fileName && <p className="text-xs text-on-surface-variant mt-1">.csv files only</p>}
-                </div>
-              </label>
+              </div>
 
               {error && (
                 <p className="text-xs text-error bg-error/10 px-3 py-2 rounded-lg">{error}</p>
