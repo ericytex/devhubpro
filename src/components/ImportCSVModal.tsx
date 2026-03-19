@@ -79,9 +79,10 @@ export default function ImportCSVModal() {
 
             <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-5">
               
-              <label
-                className={`w-full flex flex-col items-center justify-center px-4 py-8 border-2 rounded-xl transition-all cursor-pointer ${fileName ? 'bg-primary/5 border-primary/40 border-solid' : 'bg-surface-container-low border-outline-variant/40 border-dashed hover:bg-primary/5 hover:border-primary/30'}`}
+              <div
+                className={`relative w-full rounded-xl transition-all overflow-hidden border-2 ${fileName ? 'bg-primary/5 border-primary/40 border-solid' : 'bg-surface-container-low border-outline-variant/40 border-dashed hover:bg-primary/5 hover:border-primary/30'}`}
               >
+                {/* The REAL target. Visibly rendered to the DOM but completely transparent. No display: none. No clip. */}
                 <input
                   type="file"
                   name="file"
@@ -89,16 +90,20 @@ export default function ImportCSVModal() {
                   required
                   ref={fileInputRef}
                   onChange={(e) => setFileName(e.target.files?.[0]?.name || '')}
-                  className="hidden"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50 block"
                 />
-                <span className={`material-symbols-outlined text-4xl mb-2 transition-colors ${fileName ? 'text-primary' : 'text-outline hover:text-primary'}`}>
-                  {fileName ? 'description' : 'cloud_upload'}
-                </span>
-                <p className="text-sm font-semibold text-on-surface text-center px-2 truncate w-full">
-                  {fileName || 'Click here to choose CSV'}
-                </p>
-                {!fileName && <p className="text-xs text-on-surface-variant mt-1">.csv files only</p>}
-              </label>
+                
+                {/* The visual facade underneath the transparent input */}
+                <div className="pointer-events-none w-full flex flex-col items-center justify-center px-4 py-8 text-center relative z-10">
+                  <span className={`material-symbols-outlined text-4xl mb-2 transition-colors ${fileName ? 'text-primary' : 'text-outline hover:text-primary'}`}>
+                    {fileName ? 'description' : 'cloud_upload'}
+                  </span>
+                  <p className="text-sm font-semibold text-on-surface truncate w-full">
+                    {fileName || 'Click here or drag CSV'}
+                  </p>
+                  {!fileName && <p className="text-xs text-on-surface-variant mt-1">.csv files only</p>}
+                </div>
+              </div>
 
               {error && (
                 <p className="text-xs text-error bg-error/10 px-3 py-2 rounded-lg">{error}</p>
