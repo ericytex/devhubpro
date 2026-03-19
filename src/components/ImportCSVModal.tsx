@@ -71,16 +71,16 @@ export default function ImportCSVModal() {
 
             <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-5">
               
-              <div className="relative group">
+              <label className="relative group cursor-pointer block">
                 <input
                   type="file"
                   name="file"
                   accept=".csv"
                   required
                   onChange={(e) => setFileName(e.target.files?.[0]?.name || '')}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
-                <div className={`w-full flex flex-col items-center justify-center px-4 py-8 border-2 dashed rounded-xl transition-all ${fileName ? 'bg-primary/5 border-primary/40' : 'bg-surface-container-low border-outline-variant/40 border-dashed group-hover:bg-primary/5 group-hover:border-primary/30'}`}>
+                <div className={`w-full flex flex-col items-center justify-center px-4 py-8 border-2 rounded-xl transition-all ${fileName ? 'bg-primary/5 border-primary/40 border-solid' : 'bg-surface-container-low border-outline-variant/40 border-dashed group-hover:bg-primary/5 group-hover:border-primary/30'}`}>
                   <span className={`material-symbols-outlined text-4xl mb-2 transition-colors ${fileName ? 'text-primary' : 'text-outline group-hover:text-primary'}`}>
                     {fileName ? 'description' : 'cloud_upload'}
                   </span>
@@ -89,7 +89,7 @@ export default function ImportCSVModal() {
                   </p>
                   {!fileName && <p className="text-xs text-on-surface-variant mt-1">.csv files only</p>}
                 </div>
-              </div>
+              </label>
 
               {error && (
                 <p className="text-xs text-error bg-error/10 px-3 py-2 rounded-lg">{error}</p>
