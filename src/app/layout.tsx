@@ -39,8 +39,12 @@ export default function RootLayout({
         className={`${inter.variable} ${manrope.variable} antialiased bg-background text-on-background min-h-screen overflow-x-hidden`}
       >
         <Sidebar />
-        {/* The sidebar is 256px wide on md+. This wrapper offsets and clamps content width. */}
-        <div className="md:ml-64 min-h-screen flex flex-col overflow-x-hidden">
+
+        {/*
+          Mobile:  top bar = 56px, bottom tab bar = 64px → pt-14 pb-16
+          Desktop: sidebar is 256px wide → md:ml-64, no extra top/bottom padding
+        */}
+        <div className="pt-14 pb-16 md:pt-0 md:pb-0 md:ml-64 min-h-screen flex flex-col overflow-x-hidden">
           {children}
         </div>
       </body>

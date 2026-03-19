@@ -1,153 +1,174 @@
+import { prisma } from '@/lib/prisma'
+import LogSessionModal from '@/components/LogSessionModal'
+
 export const dynamic = 'force-dynamic'
 
-export default function TimerPage() {
+export default async function TimerPage() {
+  const projects = await prisma.project.findMany({
+    where: { status: { not: 'completed' } },
+    orderBy: { lastWorkedAt: 'desc' },
+    select: { id: true, name: true },
+  })
+
+  const todaySessions = await prisma.session.findMany({
+    where: { startTime: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+    include: { project: true },
+    orderBy: { startTime: 'desc' },
+  })
+
+  const todayMinutes = todaySessions.reduce((s, sess) => s + (sess.duration ?? 0), 0)
+  const todayHours = (todayMinutes / 60).toFixed(1)
+
+  // Week streak calculation
+  const weekSessions = await prisma.session.findMany({
+    where: { startTime: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+    orderBy: { startTime: 'desc' },
+  })
+  const daysWithSessions = new Set(weekSessions.map(s => s.startTime.toDateString())).size
+
   return (
     <div className="flex flex-col flex-1 bg-surface-container-low relative overflow-hidden">
-      {/* ── Top bar ── */}
-      <header className="sticky top-0 z-50 bg-surface-container-low/80 backdrop-blur-xl border-b border-outline-variant/10 flex items-center justify-between px-6 lg:px-10 h-[72px] gap-4">
-        <div className="flex items-center gap-6 min-w-0">
-          <h1 className="text-xl font-extrabold tracking-tight text-primary font-headline shrink-0">FounderEngine</h1>
+
+      {/* ── Desktop top bar ── */}
+      <header className="hidden md:flex sticky top-0 z-50 bg-surface-container-low/80 backdrop-blur-xl border-b border-outline-variant/10 items-center justify-between px-6 lg:px-10 h-[68px] gap-4">
+        <div className="flex items-center gap-5 min-w-0">
+          <h1 className="text-lg font-extrabold tracking-tight text-primary font-headline shrink-0">FounderEngine</h1>
           <div className="relative hidden lg:block">
-            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
-            <input className="bg-white border border-outline-variant/30 rounded-full pl-10 pr-5 py-2 w-56 focus:ring-2 focus:ring-primary/20 text-sm outline-none transition-all" placeholder="Search…" type="text"/>
+            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[17px]">search</span>
+            <input className="bg-white border border-outline-variant/30 rounded-full pl-10 pr-5 py-2 w-52 text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search…" type="text"/>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <button className="p-2 text-on-surface-variant hover:text-primary bg-white rounded-full shadow-sm border border-outline-variant/20 transition-colors">
-            <span className="material-symbols-outlined text-[20px]">notifications</span>
-          </button>
-          <button className="p-2 text-on-surface-variant hover:text-primary bg-white rounded-full shadow-sm border border-outline-variant/20 transition-colors">
-            <span className="material-symbols-outlined text-[20px]">settings</span>
+            <span className="material-symbols-outlined text-[19px]">notifications</span>
           </button>
           <div className="h-9 w-9 bg-primary/15 text-primary text-sm font-bold flex items-center justify-center rounded-full border border-primary/20">AR</div>
         </div>
       </header>
 
       {/* Decorative blobs */}
-      <div className="pointer-events-none select-none absolute inset-0 overflow-hidden -z-0">
-        <div className="absolute top-0 right-0 w-[40vw] h-full bg-gradient-to-l from-primary/5 to-transparent"></div>
-        <div className="absolute bottom-0 right-0 w-72 h-72 bg-primary/10 blur-[100px] rounded-full"></div>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden -z-0">
+        <div className="absolute top-0 right-0 w-[40vw] h-full bg-gradient-to-l from-primary/5 to-transparent hidden md:block"></div>
+        <div className="absolute bottom-0 right-0 w-64 h-64 bg-primary/8 blur-[80px] rounded-full"></div>
       </div>
 
-      {/* ── Main canvas ── */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-6 py-16">
+      <div className="flex-1 px-4 sm:px-6 lg:px-10 py-6 sm:py-8 relative z-10 max-w-screen-xl w-full mx-auto flex flex-col">
 
-        {/* Context labels */}
-        <div className="w-full max-w-4xl flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5 mb-12">
+        {/* Page header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Current Sprint</p>
-            <h3 className="text-2xl font-extrabold text-on-surface tracking-tight">Refactor API Sprint</h3>
-            <div className="flex items-center gap-2 text-primary text-sm font-semibold mt-1">
-              <span className="material-symbols-outlined text-[16px]">folder</span> Zen CMS
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-on-surface mb-1">Work Timer</h2>
+            <p className="text-sm text-on-surface-variant">
+              {todayHours}h logged today · {daysWithSessions}-day streak
+            </p>
           </div>
-          <div className="flex items-center gap-3.5 bg-white px-5 py-3.5 rounded-2xl shadow-sm border border-outline-variant/10 self-start">
-            <div className="w-3 h-3 rounded-full bg-secondary animate-pulse shadow-[0_0_10px_rgba(0,108,73,0.5)]"></div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Session Mode</p>
-              <p className="text-sm font-bold text-on-surface">Deep Focus Active</p>
-            </div>
-          </div>
+          <LogSessionModal projects={projects} />
         </div>
 
-        {/* Timer circle */}
-        <div className="relative">
-          <div className="w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] lg:w-[440px] lg:h-[440px] rounded-full border-[10px] border-surface-container flex items-center justify-center relative">
-            <svg className="absolute inset-0 w-full h-full -rotate-90">
-              <circle
-                className="text-secondary"
-                cx="50%" cy="50%" fill="transparent" r="46%"
-                stroke="currentColor"
-                strokeDasharray="1300" strokeDashoffset="450"
-                strokeLinecap="round" strokeWidth="10"
-              />
-            </svg>
-            <div className="w-[260px] h-[260px] sm:w-[330px] sm:h-[330px] lg:w-[390px] lg:h-[390px] rounded-full bg-white shadow-xl flex flex-col items-center justify-center border border-outline-variant/10">
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-3">Elapsed Time</p>
-              <div className="flex items-baseline">
-                <span className="text-6xl sm:text-8xl font-extrabold text-on-background tracking-tight tabular-nums">24</span>
-                <span className="text-4xl sm:text-6xl font-bold text-primary mx-1">:</span>
-                <span className="text-6xl sm:text-8xl font-extrabold text-on-background tracking-tight tabular-nums">18</span>
-              </div>
-              <div className="mt-5 flex gap-8 items-center">
-                <div className="text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Goal</p>
-                  <p className="text-base font-bold text-on-surface tabular-nums">45:00</p>
-                </div>
-                <div className="w-px h-8 bg-outline-variant/30"></div>
-                <div className="text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Streak</p>
-                  <p className="text-base font-bold text-primary">4 Days 🔥</p>
-                </div>
-              </div>
+        {/* Today's stats strip */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-7">
+          {[
+            { label: "Today's Sessions", value: todaySessions.length },
+            { label: 'Minutes Today', value: todayMinutes },
+            { label: 'Streak (days)', value: daysWithSessions },
+          ].map(s => (
+            <div key={s.label} className="bg-white rounded-2xl p-4 sm:p-5 border border-outline-variant/10 text-center">
+              <p className="text-xl sm:text-3xl font-extrabold text-on-surface tracking-tight">{s.value}</p>
+              <p className="text-[10px] sm:text-xs text-on-surface-variant font-semibold mt-1 uppercase tracking-wider leading-tight">{s.label}</p>
             </div>
-          </div>
-
-          {/* Controls */}
-          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 flex gap-3">
-            <button className="w-13 h-13 bg-white border border-outline-variant/20 rounded-full shadow-md flex items-center justify-center hover:bg-surface-container transition-all active:scale-95" style={{ width: 52, height: 52 }}>
-              <span className="material-symbols-outlined text-[22px] text-on-surface">pause</span>
-            </button>
-            <button className="h-[52px] px-7 bg-primary text-white rounded-full shadow-lg shadow-primary/30 font-semibold text-sm flex items-center gap-2 hover:-translate-y-0.5 active:scale-95 transition-all">
-              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>stop</span>
-              Stop Session
-            </button>
-            <button className="bg-white border border-outline-variant/20 rounded-full shadow-md flex items-center justify-center hover:bg-surface-container transition-all active:scale-95" style={{ width: 52, height: 52 }}>
-              <span className="material-symbols-outlined text-[22px] text-on-surface">skip_next</span>
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* Insight panels */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full max-w-4xl mt-20">
-          {/* Productivity */}
-          <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
-                <span className="material-symbols-outlined text-[18px]">bolt</span>
+        {/* Central timer + insights */}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+
+          {/* Timer circle */}
+          <div className="flex flex-col items-center w-full lg:w-auto lg:flex-1">
+            <div className="relative">
+              <div className="w-[260px] h-[260px] sm:w-[320px] sm:h-[320px] lg:w-[380px] lg:h-[380px] rounded-full border-[10px] border-surface-container flex items-center justify-center relative">
+                <svg className="absolute inset-0 w-full h-full -rotate-90">
+                  <circle
+                    className="text-secondary"
+                    cx="50%" cy="50%" fill="transparent" r="46%"
+                    stroke="currentColor" strokeDasharray="1200" strokeDashoffset="400"
+                    strokeLinecap="round" strokeWidth="10"
+                  />
+                </svg>
+                <div className="w-[220px] h-[220px] sm:w-[280px] sm:h-[280px] lg:w-[330px] lg:h-[330px] rounded-full bg-white shadow-xl flex flex-col items-center justify-center border border-outline-variant/10">
+                  <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-2">Elapsed Time</p>
+                  <div className="flex items-baseline">
+                    <span className="text-5xl sm:text-7xl lg:text-8xl font-extrabold text-on-background tracking-tight tabular-nums">00</span>
+                    <span className="text-3xl sm:text-5xl font-bold text-primary mx-1">:</span>
+                    <span className="text-5xl sm:text-7xl lg:text-8xl font-extrabold text-on-background tracking-tight tabular-nums">00</span>
+                  </div>
+                  <div className="mt-4 flex gap-6 items-center">
+                    <div className="text-center">
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Goal</p>
+                      <p className="text-sm sm:text-base font-bold text-on-surface tabular-nums">45:00</p>
+                    </div>
+                    <div className="w-px h-7 bg-outline-variant/30"></div>
+                    <div className="text-center">
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Streak</p>
+                      <p className="text-sm sm:text-base font-bold text-primary">{daysWithSessions}d 🔥</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="font-semibold text-sm text-on-surface">Productivity</p>
+              {/* Controls */}
+              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-3">
+                <button className="w-12 h-12 bg-white border border-outline-variant/20 rounded-full shadow-md flex items-center justify-center hover:bg-surface-container transition-all active:scale-95">
+                  <span className="material-symbols-outlined text-[20px] text-on-surface">pause</span>
+                </button>
+                <button className="h-12 px-6 bg-primary text-white rounded-full shadow-lg shadow-primary/25 text-sm font-semibold flex items-center gap-2 hover:-translate-y-0.5 active:scale-95 transition-all">
+                  <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>stop</span>
+                  Stop
+                </button>
+                <button className="w-12 h-12 bg-white border border-outline-variant/20 rounded-full shadow-md flex items-center justify-center hover:bg-surface-container transition-all active:scale-95">
+                  <span className="material-symbols-outlined text-[20px] text-on-surface">skip_next</span>
+                </button>
+              </div>
             </div>
-            <div className="h-2 w-full bg-surface-container rounded-full overflow-hidden mb-3">
-              <div className="h-full w-4/5 bg-secondary rounded-full"></div>
-            </div>
-            <p className="text-xs text-on-surface-variant">80% of daily target reached</p>
+            <p className="text-xs text-on-surface-variant mt-10 text-center">Use &quot;Log Session&quot; above to record your work</p>
           </div>
 
-          {/* Recent laps */}
-          <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <span className="material-symbols-outlined text-[18px]">history</span>
+          {/* Right: Today's sessions log */}
+          <div className="w-full lg:w-80 xl:w-96 mt-6 lg:mt-0">
+            <h3 className="text-sm font-bold text-on-surface mb-3">Today's Sessions</h3>
+            {todaySessions.length > 0 ? (
+              <div className="space-y-3">
+                {todaySessions.map((s, i) => (
+                  <div key={i} className="bg-white rounded-2xl p-4 border border-outline-variant/10 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[16px]">timer</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-on-surface truncate">{s.project?.name}</p>
+                      <p className="text-xs text-on-surface-variant">{s.duration}min · {s.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      {s.notes && <p className="text-xs text-on-surface-variant mt-0.5 truncate italic">{s.notes}</p>}
+                    </div>
+                    <span className="text-sm font-bold text-secondary shrink-0">{s.duration}m</span>
+                  </div>
+                ))}
               </div>
-              <p className="font-semibold text-sm text-on-surface">Recent Laps</p>
-            </div>
-            <ul className="space-y-3">
-              {[['Module Setup', '45:00'], ['Schema Fix', '22:14']].map(([label, time]) => (
-                <li key={label} className="flex justify-between items-center text-xs">
-                  <span className="text-on-surface-variant font-medium flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>{label}
-                  </span>
-                  <span className="text-on-surface font-bold tabular-nums">{time}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 text-center">
+                <span className="material-symbols-outlined text-3xl text-outline-variant">timer_off</span>
+                <p className="text-sm text-on-surface-variant mt-2">No sessions yet today.</p>
+                <p className="text-xs text-outline mt-1">Tap &quot;Log Session&quot; to get started.</p>
+              </div>
+            )}
 
-          {/* Focus level */}
-          <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-9 h-9 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center">
-                <span className="material-symbols-outlined text-[18px]">psychology</span>
+            {/* Insight card */}
+            <div className="mt-4 bg-gradient-to-br from-primary to-primary-container rounded-2xl p-5 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl"></div>
+              <div className="relative flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>tips_and_updates</span>
+                <p className="text-xs font-bold uppercase tracking-widest">Focus Insight</p>
               </div>
-              <p className="font-semibold text-sm text-on-surface">Focus Level</p>
+              <p className="text-sm text-white/85 leading-relaxed relative">
+                You peak between <strong className="text-white">9–11:30 AM</strong>. Schedule your hardest tasks in this window.
+              </p>
             </div>
-            <div className="flex justify-between items-end h-12 gap-1 px-1">
-              {[30, 45, 60, 85, 100, 70, 90].map((v, i) => (
-                <div key={i} className="flex-1 rounded-sm bg-secondary transition-all" style={{ height: `${v}%`, opacity: i < 5 ? 1 : 0.3 }}></div>
-              ))}
-            </div>
-            <p className="text-xs text-secondary font-semibold mt-3">Peak performance detected</p>
           </div>
         </div>
       </div>
