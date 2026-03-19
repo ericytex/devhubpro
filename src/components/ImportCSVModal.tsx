@@ -9,7 +9,12 @@ export default function ImportCSVModal() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [fileName, setFileName] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
+
+  function handlePickFile() {
+    fileInputRef.current?.click()
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -17,7 +22,12 @@ export default function ImportCSVModal() {
     setSuccess('')
     setLoading(true)
     
+    // We get FormData automatically, but we ensure 'file' is appended if it's not picked up
     const fd = new FormData(e.currentTarget)
+    if (fileInputRef.current?.files?.[0]) {
+      fd.set('file', fileInputRef.current.files[0])
+    }
+
     const res = await importProjectsFromCSV(fd)
     
     setLoading(false)
@@ -28,6 +38,7 @@ export default function ImportCSVModal() {
     
     setSuccess(`Successfully imported ${res.count} projects!`)
     formRef.current?.reset()
+    if (fileInputRef.current) fileInputRef.current.value = ''
     setFileName('')
     setTimeout(() => {
       setOpen(false)
@@ -57,6 +68,7 @@ export default function ImportCSVModal() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-on-surface">Import Projects from CSV</h2>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-container text-on-surface-variant transition-colors"
               >
@@ -77,9 +89,24 @@ export default function ImportCSVModal() {
                   name="file"
                   accept=".csv"
                   required
+                  ref={fileInputRef}
                   onChange={(e) => setFileName(e.target.files?.[0]?.name || '')}
-                  className="w-full text-sm text-on-surface-variant file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:cursor-pointer file:transition-colors bg-surface-container-low border border-outline-variant/40 rounded-xl cursor-pointer py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="hidden"
                 />
+                
+                <button
+                  type="button"
+                  onClick={handlePickFile}
+                  className={`w-full flex flex-col items-center justify-center px-4 py-8 border-2 rounded-xl transition-all ${fileName ? 'bg-primary/5 border-primary/40 border-solid' : 'bg-surface-container-low border-outline-variant/40 border-dashed hover:bg-primary/5 hover:border-primary/30'}`}
+                >
+                  <span className={`material-symbols-outlined text-4xl mb-2 transition-colors ${fileName ? 'text-primary' : 'text-outline hover:text-primary'}`}>
+                    {fileName ? 'description' : 'cloud_upload'}
+                  </span>
+                  <p className="text-sm font-semibold text-on-surface text-center px-2 truncate w-full">
+                    {fileName || 'Click here to choose CSV'}
+                  </p>
+                  {!fileName && <p className="text-xs text-on-surface-variant mt-1">.csv files only</p>}
+                </button>
               </div>
 
               {error && (
