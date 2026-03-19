@@ -6,11 +6,15 @@ import "./globals.css";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
 });
 
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -32,10 +36,11 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${manrope.variable} antialiased bg-background text-on-background font-body min-h-screen`}
+        className={`${inter.variable} ${manrope.variable} antialiased bg-background text-on-background min-h-screen overflow-x-hidden`}
       >
         <Sidebar />
-        <div className="md:ml-[256px] min-h-screen flex flex-col items-center w-full mx-auto max-w-[100vw] overflow-x-hidden">
+        {/* The sidebar is 256px wide on md+. This wrapper offsets and clamps content width. */}
+        <div className="md:ml-64 min-h-screen flex flex-col overflow-x-hidden">
           {children}
         </div>
       </body>

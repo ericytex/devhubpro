@@ -54,14 +54,51 @@
   --font-label: var(--font-inter);
 }
 
+/* ─── Layout reset ─────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
 body {
+  overflow-x: hidden;
   background-color: var(--color-background);
   color: var(--color-on-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Tighter default line-height and better letter-spacing */
+  line-height: 1.55;
+  letter-spacing: -0.008em;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
 
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-  vertical-align: middle;
+/* ─── Typography polish ─────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
+
+p, span, li, td, th, input, button, label {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  letter-spacing: -0.005em;
+}
+
+/* ─── Material Symbols ──────────────────────────────── */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  line-height: 1;
+  user-select: none;
+}
+
+/* ─── Scrollbar refinement ──────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-outline-variant); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-outline); }
