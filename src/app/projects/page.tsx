@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import NewProjectModal from '@/components/NewProjectModal'
+import ImportCSVModal from '@/components/ImportCSVModal'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,9 +68,7 @@ export default async function ProjectsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <button className="px-4 py-2.5 rounded-xl bg-white text-sm text-on-surface font-semibold hover:bg-surface-container transition-colors shadow-sm border border-outline-variant/20">
-              Archive
-            </button>
+            <ImportCSVModal />
             <NewProjectModal />
           </div>
         </div>

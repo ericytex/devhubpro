@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import Papa from 'papaparse'
 
 // ─── Projects ────────────────────────────────────────────────
 export async function createProject(formData: FormData) {
@@ -28,6 +29,69 @@ export async function createProject(formData: FormData) {
     return { success: true }
   } catch {
     return { error: 'Failed to create project.' }
+  }
+}
+
+export async function importProjectsFromCSV(formData: FormData) {
+  const file = formData.get('file') as File
+  if (!file || file.size === 0) return { error: 'No file provided.' }
+
+  try {
+    const text = await file.text()
+    
+    // Parse the CSV
+    const result = Papa.parse(text, { header: true, skipEmptyLines: true })
+    if (result.errors.length > 0) {
+      return { error: 'Failed to parse CSV format.' }
+    }
+
+    const rows = result.data as any[]
+    let imported = 0
+
+    for (const row of rows) {
+      // Find the project name from possible column headers
+      const name = row['Project Name'] || row['Project'] || row['Name'] || Object.values(row)[0]
+      if (!name) continue // Skip invalid rows
+      
+      const role = row['Role'] || ''
+      const coreFunction = row['Core Function & Innovation'] || row['Description'] || ''
+      const statusTarget = row['Status/Target'] || row['Status'] || ''
+      
+      // Compute description
+      let description = ''
+      if (role) description += `Role: ${role}\n`
+      if (coreFunction) description += `Details: ${coreFunction}\n`
+      if (statusTarget) description += `Target: ${statusTarget}`
+      
+      // Determine stage and status based on text
+      const textLower = statusTarget.toLowerCase()
+      let status = 'active'
+      let stage = 'idea'
+      
+      if (textLower.includes('dev') || textLower.includes('development')) stage = 'mvp'
+      if (textLower.includes('launch') || textLower.includes('live')) { status = 'active'; stage = 'scale' }
+      if (textLower.includes('completed') || textLower.includes('done')) { status = 'completed'; stage = 'scale' }
+      if (textLower.includes('pipeline') || textLower.includes('planning')) stage = 'idea'
+
+      await prisma.project.create({
+        data: {
+          name: typeof name === 'string' ? name.trim() : String(name),
+          description: description.trim() || null,
+          stage,
+          priority: 'medium', // Default
+          status,
+          lastWorkedAt: new Date(),
+        }
+      })
+      imported++
+    }
+
+    revalidatePath('/')
+    revalidatePath('/projects')
+    return { success: true, count: imported }
+  } catch (e) {
+    console.error('Import error', e)
+    return { error: 'An error occurred during import.' }
   }
 }
 
