@@ -13,6 +13,8 @@ export default function ImportCSVModal() {
   const formRef = useRef<HTMLFormElement>(null)
 
   function handlePickFile() {
+    console.log('[DEBUG] "Click here to choose CSV" button was clicked! Firing fileInputRef.click().')
+    if (!fileInputRef.current) console.log('[DEBUG] ERROR: fileInputRef.current is null! The hidden input is not attached.')
     fileInputRef.current?.click()
   }
 
