@@ -12,12 +12,6 @@ export default function ImportCSVModal() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
-  function handlePickFile() {
-    console.log('[DEBUG] "Click here to choose CSV" button was clicked! Firing fileInputRef.click().')
-    if (!fileInputRef.current) console.log('[DEBUG] ERROR: fileInputRef.current is null! The hidden input is not attached.')
-    fileInputRef.current?.click()
-  }
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError('')
@@ -85,7 +79,9 @@ export default function ImportCSVModal() {
 
             <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-5">
               
-              <div className="flex flex-col gap-2">
+              <label
+                className={`w-full flex flex-col items-center justify-center px-4 py-8 border-2 rounded-xl transition-all cursor-pointer ${fileName ? 'bg-primary/5 border-primary/40 border-solid' : 'bg-surface-container-low border-outline-variant/40 border-dashed hover:bg-primary/5 hover:border-primary/30'}`}
+              >
                 <input
                   type="file"
                   name="file"
@@ -93,23 +89,16 @@ export default function ImportCSVModal() {
                   required
                   ref={fileInputRef}
                   onChange={(e) => setFileName(e.target.files?.[0]?.name || '')}
-                  className="absolute w-0 h-0 opacity-0 pointer-events-none"
+                  className="hidden"
                 />
-                
-                <button
-                  type="button"
-                  onClick={handlePickFile}
-                  className={`w-full flex flex-col items-center justify-center px-4 py-8 border-2 rounded-xl transition-all ${fileName ? 'bg-primary/5 border-primary/40 border-solid' : 'bg-surface-container-low border-outline-variant/40 border-dashed hover:bg-primary/5 hover:border-primary/30'}`}
-                >
-                  <span className={`material-symbols-outlined text-4xl mb-2 transition-colors ${fileName ? 'text-primary' : 'text-outline hover:text-primary'}`}>
-                    {fileName ? 'description' : 'cloud_upload'}
-                  </span>
-                  <p className="text-sm font-semibold text-on-surface text-center px-2 truncate w-full">
-                    {fileName || 'Click here to choose CSV'}
-                  </p>
-                  {!fileName && <p className="text-xs text-on-surface-variant mt-1">.csv files only</p>}
-                </button>
-              </div>
+                <span className={`material-symbols-outlined text-4xl mb-2 transition-colors ${fileName ? 'text-primary' : 'text-outline hover:text-primary'}`}>
+                  {fileName ? 'description' : 'cloud_upload'}
+                </span>
+                <p className="text-sm font-semibold text-on-surface text-center px-2 truncate w-full">
+                  {fileName || 'Click here to choose CSV'}
+                </p>
+                {!fileName && <p className="text-xs text-on-surface-variant mt-1">.csv files only</p>}
+              </label>
 
               {error && (
                 <p className="text-xs text-error bg-error/10 px-3 py-2 rounded-lg">{error}</p>
