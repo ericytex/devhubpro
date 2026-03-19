@@ -38,38 +38,105 @@ export default function TimerWidget({
   const [saveError, setSaveError] = useState('')
   const [sessions, setSessions] = useState<Session[]>(initialSessions)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const startTimeRef = useRef<number>(0)            // unix ms when timer last started
-  const accumulatedRef = useRef<number>(0)          // seconds already elapsed before latest resume
+  
+  // Ref to hold the mutable state for the tick function
+  const timerData = useRef({
+    accumulated: 0,
+    startTime: 0,
+    state: 'idle' as TimerState
+  })
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('founderengine_timer')
+      if (stored) {
+        const data = JSON.parse(stored)
+        if (data.projectId && projects.some(p => p.id === data.projectId)) {
+          setProjectId(data.projectId)
+        }
+        if (data.goal) setGoal(data.goal)
+        if (data.notes) setNotes(data.notes)
+        
+        if (data.state === 'running') {
+          timerData.current.accumulated = data.accumulated || 0
+          timerData.current.startTime = data.startTime || Date.now()
+          timerData.current.state = 'running'
+          
+          const now = Date.now()
+          const currentElapsed = timerData.current.accumulated + Math.floor((now - timerData.current.startTime) / 1000)
+          setElapsed(currentElapsed)
+          setState('running')
+          intervalRef.current = setInterval(tick, 500)
+        } else if (data.state === 'paused') {
+          timerData.current.accumulated = data.accumulated || 0
+          timerData.current.startTime = data.startTime || 0
+          timerData.current.state = 'paused'
+          setElapsed(data.accumulated || 0)
+          setState('paused')
+        }
+      }
+    } catch (e) {
+      console.error('Failed to restore timer state', e)
+    }
+  }, [projects])
+
+  // Save to localStorage on state change
+  const persistState = useCallback(() => {
+    localStorage.setItem('founderengine_timer', JSON.stringify({
+      state: timerData.current.state,
+      accumulated: timerData.current.accumulated,
+      startTime: timerData.current.startTime,
+      projectId,
+      goal,
+      notes
+    }))
+  }, [projectId, goal, notes])
+
+  // Sync state changes that don't directly trigget persist (like typing notes)
+  useEffect(() => persistState(), [persistState])
 
   // Tick
   const tick = useCallback(() => {
-    setElapsed(accumulatedRef.current + Math.floor((Date.now() - startTimeRef.current) / 1000))
+    if (timerData.current.state === 'running') {
+      const current = timerData.current.accumulated + Math.floor((Date.now() - timerData.current.startTime) / 1000)
+      setElapsed(current)
+    }
   }, [])
 
   function start() {
-    startTimeRef.current = Date.now()
-    intervalRef.current = setInterval(tick, 500)
+    timerData.current.startTime = Date.now()
+    timerData.current.state = 'running'
     setState('running')
+    persistState()
+    intervalRef.current = setInterval(tick, 500)
   }
 
   function pause() {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    accumulatedRef.current = elapsed
+    timerData.current.accumulated = elapsed
+    timerData.current.state = 'paused'
     setState('paused')
+    persistState()
   }
 
   function resume() {
-    startTimeRef.current = Date.now()
-    intervalRef.current = setInterval(tick, 500)
+    timerData.current.startTime = Date.now()
+    timerData.current.state = 'running'
     setState('running')
+    persistState()
+    intervalRef.current = setInterval(tick, 500)
   }
 
   function reset() {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    accumulatedRef.current = 0
+    timerData.current.accumulated = 0
+    timerData.current.startTime = 0
+    timerData.current.state = 'idle'
     setElapsed(0)
     setState('idle')
     setSaveError('')
+    persistState()
   }
 
   async function stopAndLog() {
@@ -101,10 +168,13 @@ export default function TimerWidget({
     }, ...prev].slice(0, 10))
 
     // Reset timer
-    accumulatedRef.current = 0
+    timerData.current.accumulated = 0
+    timerData.current.startTime = 0
+    timerData.current.state = 'idle'
     setElapsed(0)
     setState('idle')
     setNotes('')
+    localStorage.removeItem('founderengine_timer')
     router.refresh()   // refresh server data (today totals, analytics)
   }
 
