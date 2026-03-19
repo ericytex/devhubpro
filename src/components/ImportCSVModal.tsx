@@ -93,7 +93,7 @@ export default function ImportCSVModal() {
                   required
                   ref={fileInputRef}
                   onChange={(e) => setFileName(e.target.files?.[0]?.name || '')}
-                  className="sr-only"
+                  className="absolute w-0 h-0 opacity-0 pointer-events-none"
                 />
                 
                 <button
