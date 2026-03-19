@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
+import Sidebar from "@/components/Sidebar";
 import "./globals.css";
 
 const inter = Inter({
@@ -31,9 +32,12 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${manrope.variable} antialiased bg-background text-on-background font-body`}
+        className={`${inter.variable} ${manrope.variable} antialiased bg-background text-on-background font-body min-h-screen`}
       >
-        {children}
+        <Sidebar />
+        <div className="md:ml-[256px] min-h-screen flex flex-col items-center w-full mx-auto max-w-[100vw] overflow-x-hidden">
+          {children}
+        </div>
       </body>
     </html>
   );
