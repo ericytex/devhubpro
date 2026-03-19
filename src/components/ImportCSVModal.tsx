@@ -8,6 +8,7 @@ export default function ImportCSVModal() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [fileName, setFileName] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -27,6 +28,7 @@ export default function ImportCSVModal() {
     
     setSuccess(`Successfully imported ${res.count} projects!`)
     formRef.current?.reset()
+    setFileName('')
     setTimeout(() => {
       setOpen(false)
       setSuccess('')
@@ -75,12 +77,17 @@ export default function ImportCSVModal() {
                   name="file"
                   accept=".csv"
                   required
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  onChange={(e) => setFileName(e.target.files?.[0]?.name || '')}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                 />
-                <div className="w-full flex flex-col items-center justify-center px-4 py-8 border-2 border-dashed border-outline-variant/40 rounded-xl bg-surface-container-low group-hover:bg-primary/5 group-hover:border-primary/30 transition-all">
-                  <span className="material-symbols-outlined text-4xl text-outline mb-2 group-hover:text-primary transition-colors">cloud_upload</span>
-                  <p className="text-sm font-semibold text-on-surface">Click or drag CSV here</p>
-                  <p className="text-xs text-on-surface-variant mt-1">.csv files only</p>
+                <div className={`w-full flex flex-col items-center justify-center px-4 py-8 border-2 dashed rounded-xl transition-all ${fileName ? 'bg-primary/5 border-primary/40' : 'bg-surface-container-low border-outline-variant/40 border-dashed group-hover:bg-primary/5 group-hover:border-primary/30'}`}>
+                  <span className={`material-symbols-outlined text-4xl mb-2 transition-colors ${fileName ? 'text-primary' : 'text-outline group-hover:text-primary'}`}>
+                    {fileName ? 'description' : 'cloud_upload'}
+                  </span>
+                  <p className="text-sm font-semibold text-on-surface text-center px-2 truncate w-full">
+                    {fileName || 'Click or drag CSV here'}
+                  </p>
+                  {!fileName && <p className="text-xs text-on-surface-variant mt-1">.csv files only</p>}
                 </div>
               </div>
 
