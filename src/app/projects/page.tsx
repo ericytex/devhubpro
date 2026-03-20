@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import Link from 'next/link'
 import NewProjectModal from '@/components/NewProjectModal'
 import ImportCSVModal from '@/components/ImportCSVModal'
 
@@ -95,7 +96,7 @@ export default async function ProjectsPage() {
             const total = project.tasks.length
             const progress = total > 0 ? Math.round((done / total) * 100) : project.status === 'completed' ? 100 : 0
             return (
-              <div key={project.id} className="group bg-white rounded-2xl p-5 sm:p-6 border border-outline-variant/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col">
+              <Link href={`/projects/${project.id}`} key={project.id} className="block group bg-white rounded-2xl p-5 sm:p-6 border border-outline-variant/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col">
                 <div className="flex justify-between items-start mb-5">
                   <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${theme.bg} flex items-center justify-center ${theme.text} shrink-0`}>
                     <span className="material-symbols-outlined text-[19px] sm:text-[21px]">{theme.icon}</span>
@@ -121,12 +122,12 @@ export default async function ProjectsPage() {
                       <span className="material-symbols-outlined text-[14px]">schedule</span>
                       {project.sessions.length} session{project.sessions.length !== 1 ? 's' : ''}
                     </span>
-                    <button className="text-xs text-primary font-semibold flex items-center gap-1 group-hover:gap-1.5 transition-all">
+                    <span className="text-xs text-primary font-semibold flex items-center gap-1 group-hover:gap-1.5 transition-all">
                       Open <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
-                    </button>
+                    </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             )
           })}
 
